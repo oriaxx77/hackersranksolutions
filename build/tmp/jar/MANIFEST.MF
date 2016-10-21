@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Implementation-Title: Oriaxx77 HackersRank solutions
+Implementation-Version: 0.0.1
+
