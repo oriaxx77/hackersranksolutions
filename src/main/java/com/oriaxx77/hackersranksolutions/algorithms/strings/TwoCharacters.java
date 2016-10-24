@@ -74,7 +74,7 @@ public class TwoCharacters {
 		return alternatingStringsLengths.stream().max( Integer::compareTo ).orElse(0);
 	}
 	
-	/*
+	/**
 	 * Calculate the alternating string length for a character pair.
 	 */
 	private static int getCharacterPairAlternatingLength( Entry<Character,List<Integer>> characterPositions1, Entry<Character,List<Integer>> characterPositions2){		
@@ -112,11 +112,20 @@ public class TwoCharacters {
 		return firstEntry.getValue().size() + secondEntry.getValue().size() ;
 	}
 	
+	/**
+	 * Returns true if the alternatings impossible:
+	 * - The characters are  the same
+	 * - The differences of occurences of the two characters are higher than 1. 
+	 */
 	private static boolean impossibleAlternatings( Entry<Character,List<Integer>> charPositions1, Entry<Character,List<Integer>> charPositions2 ) {
 		return ( charPositions1.getKey().equals( charPositions2.getKey()) ) ||
 				( Math.abs( charPositions1.getValue().size()-charPositions2.getValue().size() ) > 1 );  
 	}
 	
+	/**
+	 * Defines the pull order of the two character-positions.
+	 * The one with more occurrences should be the first.
+	 */
 	private static List<Entry<Character,List<Integer>>> definePullOrder( Entry<Character,List<Integer>> characterPositions1, Entry<Character,List<Integer>> characterPositions2 ) {
 		Entry<Character,List<Integer>> firstEntry;
 		Entry<Character,List<Integer>> secondEntry;
@@ -142,7 +151,11 @@ public class TwoCharacters {
 	
 	
 	
-	
+	/**
+	 * Static entry point of the app. Get the data from the command line.
+	 * See https://www.hackerrank.com/challenges/two-characters 
+	 * @param args Not used
+	 */
 	public static void main(String[] args) {
 		@SuppressWarnings("resource")
 		Scanner scan = new Scanner(System.in);
