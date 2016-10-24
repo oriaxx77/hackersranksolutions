@@ -1,14 +1,15 @@
 package com.oriaxx77.hackersranksolutions.algorithms.strings;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 
@@ -18,125 +19,136 @@ import java.util.Set;
  * Idea:
  * 
  * 1. Create a Map that contains all characters with their positions in the string. e.g. in bananba a -> 1,3,6, b -> 0,5, n-> 2,4
- * 2. Calculate the alteration string length for all char pairs. 
- * 3. Get the max from the alteration string length
- * 
- * Sample:
- * 
- * input:
- * //141
-		//cwomzxmuelmangtosqkgfdqvkzdnxerhravxndvomhbokqmvsfcaddgxgwtpgpqrmeoxvkkjunkbjeyteccpugbkvhljxsshpoymkryydtmfhaogepvbwmypeiqumcibjskmsrpllgbvc
-		
-		// Output: 8
+ * 2. Calculate the alternating string length for all char pairs. 
+ * 3. Get the max from the alternating string lengths
  */
 public class TwoCharacters {
 	
-	public static long twoCharacters(String s) {
+	public long longestAlternatingCharacterPairs(String s) {
 		
-        if ( basecase( s ) ){
+        if ( baseCase( s ) ){
         	return 0;
         }                
         
-        Map<Character,List<Integer>> charPositionsMap = createCharPositionsMap( s );        
-        
-        return findBestCaractersForAlterations( charPositionsMap.entrySet() );
+        Map<Character,List<Integer>> characterPositionsMap = createCharacterPositionsMap( s );        
+        List<Integer> alternatingCharacterPairsLengths = getCharacterPairAlternatingsLengths( characterPositionsMap.entrySet() );
+        return getMax( alternatingCharacterPairsLengths );
     }
 
-	private static boolean basecase( String s ){
+	
+	/**
+	 * Empty string or null is base case. Return 0.
+	 */
+	private static boolean baseCase( String s ){
 		return s == null || s.length() == 0;
 	}
 	
-	private static int findBestCaractersForAlterations( Set<Entry<Character,List<Integer>>> orderedCharPositionsList){
-		List<Integer> alterationCounts = new ArrayList<Integer>();
+	
+	/**
+	 * Create a Map that contains all characters with their positions in the string. e.g. in bananba a -> 1,3,6, b -> 0,5, n-> 2,4 
+	 */
+	private static Map<Character,List<Integer>> createCharacterPositionsMap( String s ) {
+		return IntStream.range(0, s.length())
+				 .mapToObj( i -> new AbstractMap.SimpleEntry<Character, Integer>( s.charAt(i), i) )
+				 .collect( Collectors.groupingBy( Entry::getKey, Collectors.mapping( Entry::getValue, Collectors.toList()) ) );		
+	}
+	
+	
+	/** 
+	 * Calculate the alteration string length for all char pairs. 
+	 */
+	private static List<Integer> getCharacterPairAlternatingsLengths( Set<Entry<Character,List<Integer>>> orderedCharPositionsList){
+		List<Integer> altnationCounts = new ArrayList<Integer>();
 		for ( Entry<Character,List<Integer>> charPos1 : orderedCharPositionsList ) {
         	for ( Entry<Character,List<Integer>> charPos2: orderedCharPositionsList ){
-        		alterationCounts.add( calcAlterations( charPos1, charPos2 ) );
+        		altnationCounts.add( getCharacterPairAlternatingLength( charPos1, charPos2 ) );
         	}
         }
-		
-		Collections.sort( alterationCounts );
-		return alterationCounts.isEmpty() ? 0: alterationCounts.get( alterationCounts.size()-1 ); 
-		
+		return altnationCounts;
 	}
 	
+	/**
+	 * Get the alteration counts list and returns with the max element.
+	 */
+	private static int getMax( List<Integer> alternatingStringsLengths ){
+		return alternatingStringsLengths.stream().max( Integer::compareTo ).orElse(0);
+	}
 	
-	private static int calcAlterations( Entry<Character,List<Integer>> charPos1, Entry<Character,List<Integer>> charPos2 ){
+	/*
+	 * Calculate the alternating string length for a character pair.
+	 */
+	private static int getCharacterPairAlternatingLength( Entry<Character,List<Integer>> characterPositions1, Entry<Character,List<Integer>> characterPositions2){		
 		
-		
-		if ( !charPos1.getKey().equals( charPos2.getKey())){ // Ignore same keys
-			if ( Math.abs( charPos1.getValue().size()-charPos2.getValue().size() ) <= 1)  { // Size checking. Must be 0,1 difference
-				
-				Entry<Character,List<Integer>> longer;
-				Entry<Character,List<Integer>> shorter;
-				if ( charPos1.getValue().size() > charPos2.getValue().size() ){
-					longer = charPos1;
-					shorter = charPos2;
-				} else if ( charPos1.getValue().size() < charPos2.getValue().size() ){
-					longer = charPos2;
-					shorter = charPos1;
-				} else { // ==
-					if ( charPos1.getValue().get(0) < charPos2.getValue().get(0) ) {
-						longer = charPos1;
-						shorter = charPos2;
-					} else {
-						longer = charPos2;
-						shorter = charPos1;
-					}
-				}
-				  
-				
-				int i = 0;
-				int longerIdx = 0;
-				int shorterIdx = 0;
-				int prevPos = -1;
-				
-				while ( i < longer.getValue().size() + shorter.getValue().size() ) {
-					int nextPos;
-					if ( i % 2 == 0 ) { // Pull from the longer
-						nextPos = longer.getValue().get( longerIdx++ );
-					} else { // Pull from the shorter
-						nextPos = shorter.getValue().get( shorterIdx++ );
-					}
-					
-					if ( prevPos > nextPos ) {
-						return -1;
-					}
-					prevPos = nextPos;
-					i++;
-				}
-				
-				return longer.getValue().size() + shorter.getValue().size() ;
-			}
+		if ( impossibleAlternatings(characterPositions1, characterPositions2) ) {
+			return 0;
 		}
 		
-		return 0;
+		List<Entry<Character,List<Integer>>> pullOrder = definePullOrder( characterPositions1, characterPositions2 );		
+		Entry<Character,List<Integer>> firstEntry = pullOrder.get(0);
+		Entry<Character,List<Integer>> secondEntry = pullOrder.get(1);
+				
+				  
+				
+		int i = 0;
+		int longerIdx = 0;
+		int shorterIdx = 0;
+		int prevPos = -1;
 		
+		while ( i < firstEntry.getValue().size() + secondEntry.getValue().size() ) {
+			int nextPos;
+			if ( i % 2 == 0 ) { // Pull from the longer
+				nextPos = firstEntry.getValue().get( longerIdx++ );
+			} else { // Pull from the shorter
+				nextPos = secondEntry.getValue().get( shorterIdx++ );
+			}
+			
+			if ( prevPos > nextPos ) {
+				return -1;
+			}
+			prevPos = nextPos;
+			i++;
+		}
+		
+		return firstEntry.getValue().size() + secondEntry.getValue().size() ;
 	}
 	
-	
-	private static Map<Character,List<Integer>> createCharPositionsMap( String s ) {
-		Map<Character,List<Integer>> charPositionsMap = new HashMap<>();
-        for ( int i=0; i < s.length(); i++ ) {
-        	Character c = s.charAt( i );
-        	if ( charPositionsMap.containsKey( c )) {
-        		charPositionsMap.get( c ).add( i );
-        	} else {
-        		charPositionsMap.put( c, new ArrayList<Integer>( Arrays.asList( i ) ) );
-        	}
-        }
-        return charPositionsMap;
+	private static boolean impossibleAlternatings( Entry<Character,List<Integer>> charPositions1, Entry<Character,List<Integer>> charPositions2 ) {
+		return ( charPositions1.getKey().equals( charPositions2.getKey()) ) ||
+				( Math.abs( charPositions1.getValue().size()-charPositions2.getValue().size() ) > 1 );  
 	}
+	
+	private static List<Entry<Character,List<Integer>>> definePullOrder( Entry<Character,List<Integer>> characterPositions1, Entry<Character,List<Integer>> characterPositions2 ) {
+		Entry<Character,List<Integer>> firstEntry;
+		Entry<Character,List<Integer>> secondEntry;
+		if ( characterPositions1.getValue().size() > characterPositions2.getValue().size() ){
+			firstEntry = characterPositions1;
+			secondEntry = characterPositions2;
+		} else if ( characterPositions1.getValue().size() < characterPositions2.getValue().size() ){
+			firstEntry = characterPositions2;
+			secondEntry = characterPositions1;
+		} else { // ==
+			if ( characterPositions1.getValue().get(0) < characterPositions2.getValue().get(0) ) {
+				firstEntry = characterPositions1;
+				secondEntry = characterPositions2;
+			} else {
+				firstEntry = characterPositions2;
+				secondEntry = characterPositions1;
+			}
+		}
+		return Arrays.asList( firstEntry, secondEntry );
+	}
+			
+	  		
+	
 	
 	
 	
 	public static void main(String[] args) {
-		
-		
 		@SuppressWarnings("resource")
 		Scanner scan = new Scanner(System.in);
 		scan.nextLine();
         String string = scan.nextLine();
-		System.out.println( twoCharacters( string ) );	
+		System.out.println( new TwoCharacters().longestAlternatingCharacterPairs( string ) );	
 	}
 
 }
